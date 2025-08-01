@@ -19,10 +19,10 @@ st.title("Kevin De Bruyne vs Mohamed Salah All-Time Fantasy Premier League Stats
 col_left,col_right=st.columns(2)
 
 with col_left:
-    st.image('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/de Bruyne.png', width=150, caption='Kevin De Bruyne')
+    st.image('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/de Bruyne.png', width=160, caption='Kevin De Bruyne')
 
 with col_right:
-    st.image('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/Salah.png', width=150, caption='Mohamed Salah')
+    st.image('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/Salah.png', width=160, caption='Mohamed Salah')
 
 # -- Interactivity --
 
@@ -64,8 +64,8 @@ st.header("Comparison between Kevin De Bruyne and Mohamed Salah")
 
 # Merge filtered data on season_name
 df_merged = pd.merge(
-    df_kdb_filtered[['season_name','goals_scored','assists','total_points','influence', 'creativity']],
-    df_salah_filtered[['season_name','goals_scored','assists','total_points','influence', 'creativity']],
+    df_kdb_filtered[['season_name','goals_scored','assists','total_points','influence', 'creativity', 'minutes', 'penalties_missed']],
+    df_salah_filtered[['season_name','goals_scored','assists','total_points','influence', 'creativity', 'minutes', 'penalties_missed']],
     on='season_name',
     suffixes=('_kdb', '_salah')
 ).sort_values('season_name')
@@ -114,6 +114,24 @@ ax5.set_ylabel("Creativity")
 ax5.set_title("Creativity by Season")
 ax5.legend()
 st.pyplot(fig5)
+
+fig6, ax6=plt.subplots(figsize=(10, 6))
+ax6.plot(df_merged['season_name'], df_merged['minutes_kdb'], marker='o', label='Kevin De Bruyne')
+ax6.plot(df_merged['season_name'], df_merged['minutes_salah'], marker='s', label='Mohamed Salah')
+ax6.set_xlabel("Season")
+ax6.set_ylabel("Minutes Played")
+ax6.set_title("Minutes Played by Season")   
+ax6.legend()
+st.pyplot(fig6)
+
+fig7, ax7=plt.subplots(figsize=(10, 6))
+ax7.plot(df_merged['season_name'], df_merged['penalties_missed_kdb'], marker='o', label='Kevin De Bruyne')
+ax7.plot(df_merged['season_name'], df_merged['penalties_missed_salah'], marker='s', label='Mohamed Salah')
+ax7.set_xlabel("Season")
+ax7.set_ylabel("Penalties Missed")
+ax7.set_title("Penalties Missed by Season")
+ax7.legend()
+st.pyplot(fig7)
 
 plt.xticks(rotation=45)
 plt.tight_layout()
