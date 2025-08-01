@@ -2,51 +2,59 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
+from pathlib import Path
+
+# Define base directory as the folder containing this script
+BASE_DIR = Path(__file__).parent
+
+# Create Path objects for your CSV and image files relative to BASE_DIR
+kdb_csv_path = BASE_DIR / 'Kevin de Bruyne FPL all-time stats.csv'
+salah_csv_path = BASE_DIR / 'Mo Salah FPL all-time Stats.csv'
+img_kdb_path = BASE_DIR / 'de Bruyne.png'
+img_salah_path = BASE_DIR / 'Salah.png'
 
 @st.cache_data
 def load_kdb_data():
-    return pd.read_csv('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/Kevin de Bruyne FPL all-time stats.csv')
+    return pd.read_csv(kdb_csv_path)
 
 @st.cache_data
 def load_salah_data():
-    return pd.read_csv('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/Mo Salah FPL all-time Stats.csv')
+    return pd.read_csv(salah_csv_path)
 
 df_kdb = load_kdb_data()
 df_salah = load_salah_data()
 
 st.title("Kevin De Bruyne vs Mohamed Salah All-Time Fantasy Premier League Stats")
 
-col_left,col_right=st.columns(2)
+# Layout player images side-by-side using columns
+col_left, col_right = st.columns(2)
 
 with col_left:
-    st.image('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/de Bruyne.png', width=160, caption='Kevin De Bruyne')
+    st.image(str(img_kdb_path), width=160, caption='Kevin De Bruyne')
 
 with col_right:
-    st.image('/Users/siphuvuyomngxunyeni/Downloads/Football Analytics/KDB vs Mo Salah/Salah.png', width=160, caption='Mohamed Salah')
+    st.image(str(img_salah_path), width=160, caption='Mohamed Salah')
 
 # -- Interactivity --
 
-# 1. Select which columns to display
-all_columns = df_kdb.columns.tolist()  # Assumes both dataframes have similar columns
+all_columns = df_kdb.columns.tolist()  # Assumes similar columns in both
 selected_columns = st.multiselect(
     "Select columns to display",
     options=all_columns,
-    default=['season_name', 'goals_scored', 'assists']  # default columns shown
+    default=['season_name', 'goals_scored', 'assists']
 )
 
-# 2. Select seasons to filter
 all_seasons = sorted(df_kdb['season_name'].unique())
 selected_seasons = st.multiselect(
     "Select seasons to include",
     options=all_seasons,
-    default=all_seasons  # show all seasons by default
+    default=all_seasons
 )
 
-# Filter dataframes by seasons selected
+# Filter dataframes by selected seasons
 df_kdb_filtered = df_kdb[df_kdb['season_name'].isin(selected_seasons)]
 df_salah_filtered = df_salah[df_salah['season_name'].isin(selected_seasons)]
 
-# Show filtered data with chosen columns
 st.header("Kevin De Bruyne's Data")
 if selected_columns:
     st.dataframe(df_kdb_filtered[selected_columns])
@@ -59,79 +67,37 @@ if selected_columns:
 else:
     st.write("Please select at least one column")
 
-# -- Plot filtered data --
 st.header("Comparison between Kevin De Bruyne and Mohamed Salah")
 
-# Merge filtered data on season_name
+# Merge filtered data on season_name with all needed columns
+merge_columns = ['season_name','goals_scored','assists','total_points',
+                 'influence', 'creativity', 'minutes', 'penalties_missed']
+
 df_merged = pd.merge(
-    df_kdb_filtered[['season_name','goals_scored','assists','total_points','influence', 'creativity', 'minutes', 'penalties_missed']],
-    df_salah_filtered[['season_name','goals_scored','assists','total_points','influence', 'creativity', 'minutes', 'penalties_missed']],
+    df_kdb_filtered[merge_columns],
+    df_salah_filtered[merge_columns],
     on='season_name',
     suffixes=('_kdb', '_salah')
 ).sort_values('season_name')
 
-fig1, ax1 = plt.subplots(figsize=(10, 6))
-ax1.plot(df_merged['season_name'], df_merged['goals_scored_kdb'], marker='o', label='Kevin De Bruyne')
-ax1.plot(df_merged['season_name'], df_merged['goals_scored_salah'], marker='s', label='Mohamed Salah')
-ax1.set_xlabel("Season")
-ax1.set_ylabel("Goals Scored")
-ax1.set_title("Goals Scored by Season")
-ax1.legend()
-st.pyplot(fig1)
+# Define a helper function to create and display a plot
+def plot_stat(stat, ylabel, title):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(df_merged['season_name'], df_merged[f'{stat}_kdb'], marker='o', label='Kevin De Bruyne')
+    ax.plot(df_merged['season_name'], df_merged[f'{stat}_salah'], marker='s', label='Mohamed Salah')
+    ax.set_xlabel("Season")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    st.pyplot(fig)
 
-fig2, ax2=plt.subplots(figsize=(10, 6))
-ax2.plot(df_merged['season_name'],df_merged['assists_kdb'], marker='o', label='Kevin De Bruyne')
-ax2.plot(df_merged['season_name'], df_merged['assists_salah'], marker='s', label='Mohamed Salah')
-ax2.set_xlabel("Season")
-ax2.set_ylabel("Assists")
-ax2.set_title("Assists by Season")
-ax2.legend()
-st.pyplot(fig2)
-
-fig3, ax3=plt.subplots(figsize=(10, 6))
-ax3.plot(df_merged['season_name'],df_merged['total_points_kdb'], marker='o', label='Kevin De Bruyne')
-ax3.plot(df_merged['season_name'], df_merged['total_points_salah'], marker='s', label='Mohamed Salah')
-ax3.set_xlabel("Season")
-ax3.set_ylabel("Total Points")
-ax3.set_title("Total Points by Season")
-ax3.legend()
-st.pyplot(fig3)
-
-fig4, ax4=plt.subplots(figsize=(10, 6))
-ax4.plot(df_merged['season_name'],df_merged['influence_kdb'], marker='o', label='Kevin De Bruyne')
-ax4.plot(df_merged['season_name'], df_merged['influence_salah'], marker='s', label='Mohamed Salah')
-ax4.set_xlabel("Season")
-ax4.set_ylabel("Influence")
-ax4.set_title("Influence by Season")
-ax4.legend()
-st.pyplot(fig4)
-
-fig5, ax5=plt.subplots(figsize=(10, 6))
-ax5.plot(df_merged['season_name'],df_merged['creativity_kdb'], marker='o', label='Kevin De Bruyne')
-ax5.plot(df_merged['season_name'], df_merged['creativity_salah'], marker='s', label='Mohamed Salah')
-ax5.set_xlabel("Season")
-ax5.set_ylabel("Creativity")
-ax5.set_title("Creativity by Season")
-ax5.legend()
-st.pyplot(fig5)
-
-fig6, ax6=plt.subplots(figsize=(10, 6))
-ax6.plot(df_merged['season_name'], df_merged['minutes_kdb'], marker='o', label='Kevin De Bruyne')
-ax6.plot(df_merged['season_name'], df_merged['minutes_salah'], marker='s', label='Mohamed Salah')
-ax6.set_xlabel("Season")
-ax6.set_ylabel("Minutes Played")
-ax6.set_title("Minutes Played by Season")   
-ax6.legend()
-st.pyplot(fig6)
-
-fig7, ax7=plt.subplots(figsize=(10, 6))
-ax7.plot(df_merged['season_name'], df_merged['penalties_missed_kdb'], marker='o', label='Kevin De Bruyne')
-ax7.plot(df_merged['season_name'], df_merged['penalties_missed_salah'], marker='s', label='Mohamed Salah')
-ax7.set_xlabel("Season")
-ax7.set_ylabel("Penalties Missed")
-ax7.set_title("Penalties Missed by Season")
-ax7.legend()
-st.pyplot(fig7)
-
-plt.xticks(rotation=45)
-plt.tight_layout()
+# Plot each stat
+plot_stat('goals_scored', 'Goals Scored', 'Goals Scored by Season')
+plot_stat('assists', 'Assists', 'Assists by Season')
+plot_stat('total_points', 'Total Points', 'Total Points by Season')
+plot_stat('influence', 'Influence', 'Influence by Season')
+plot_stat('creativity', 'Creativity', 'Creativity by Season')
+plot_stat('minutes', 'Minutes Played', 'Minutes Played by Season')
+plot_stat('penalties_missed', 'Penalties Missed', 'Penalties Missed by Season')
